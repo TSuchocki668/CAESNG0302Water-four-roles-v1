@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water's Four Roles — Section 3.2 Interactive Diagram</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --color-background-primary:   #ffffff;
+    --color-background-secondary: #f5f4f0;
+    --color-text-primary:   #1a1a18;
+    --color-text-secondary: #5f5e5a;
+    --color-text-tertiary:  #888780;
+    --color-border-tertiary:  rgba(0,0,0,0.10);
+    --color-border-secondary: rgba(0,0,0,0.20);
+    --font-sans: system-ui, -apple-system, sans-serif;
+
+    /* Role colors — colorblind-safe palette */
+    --c-solvent:  #2A9D8F;   /* teal     — transport/flow */
+    --c-thermal:  #457B9D;   /* blue     — thermal/atmosphere */
+    --c-struct:   #6A5ACD;   /* violet   — structure */
+    --c-react:    #C8914A;   /* amber    — chemical reaction/energy */
+    --c-water:    #185FA5;   /* deep blue — water center */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background-primary:   #1e1e1c;
+      --color-background-secondary: #2a2a27;
+      --color-text-primary:   #e8e6df;
+      --color-text-secondary: #b4b2a9;
+      --color-text-tertiary:  #888780;
+      --color-border-tertiary:  rgba(255,255,255,0.09);
+      --color-border-secondary: rgba(255,255,255,0.18);
+    }
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    padding: 16px 12px 24px;
+  }
+
+  .wrap { position: relative; max-width: 680px; margin: 0 auto; }
+
+  .hint {
+    font-size: 11px;
+    font-style: italic;
+    color: var(--color-text-tertiary);
+    text-align: center;
+    margin: 0 0 10px;
+  }
+
+  /* ── Hub diagram container ───────────────────────── */
+  .hub-wrap {
+    position: relative;
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: 12px;
+    padding: 16px 8px 12px;
+    margin-bottom: 12px;
+  }
+
+  svg.hub { display: block; width: 100%; height: auto; }
+
+  /* ── Role cards (four corners) ───────────────────── */
+  .role-card {
+    position: absolute;
+    width: 136px;
+    border-radius: 8px;
+    padding: 8px 10px 9px;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    background: var(--color-background-primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    user-select: none;
+  }
+
+  .role-card:hover, .role-card.active {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+  }
+
+  .role-card.active { border-color: var(--card-color); }
+
+  .role-card .role-icon {
+    font-size: 20px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .role-card .role-title {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--card-color);
+    margin: 0 0 2px;
+    line-height: 1.2;
+  }
+
+  .role-card .role-hook {
+    font-size: 9.5px;
+    color: var(--color-text-tertiary);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  /* Card positions — set by JS after measuring SVG height */
+  #card-solvent  { --card-color: var(--c-solvent); }
+  #card-thermal  { --card-color: var(--c-thermal); }
+  #card-struct   { --card-color: var(--c-struct);  }
+  #card-react    { --card-color: var(--c-react);   }
+
+  /* ── Detail panel ─────────────────────────────────── */
+  .detail-panel {
+    display: none;
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .detail-panel.visible { display: block; }
+
+  .detail-bar {
+    height: 5px;
+  }
+
+  .detail-body {
+    padding: 12px 14px 14px;
+  }
+
+  .detail-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 3px;
+    color: var(--color-text-primary);
+  }
+
+  .detail-subtitle {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    margin: 0 0 8px;
+    font-style: italic;
+  }
+
+  .detail-desc {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+    margin: 0 0 8px;
+  }
+
+  .detail-example {
+    font-size: 10.5px;
+    color: var(--color-text-secondary);
+    background: var(--color-background-secondary);
+    border-radius: 6px;
+    padding: 7px 9px;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .detail-example strong {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+
+  /* ── Caption and tagline ─────────────────────────── */
+  .caption {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    text-align: left;
+    margin: 0 0 6px;
+    line-height: 1.6;
+  }
+
+  .tagline {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    font-style: italic;
+    text-align: left;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <p class="hint">Click any role to explore how water performs it</p>
+
+  <div class="hub-wrap" id="hub-wrap">
+
+    <!--
+      SVG hub: water molecule at center, four spokes
+      radiating to each role. viewBox 480×300.
+      Spoke endpoint coordinates (where lines meet role cards):
+        Solvent  (top-left):    (96,  60)
+        Thermal  (top-right):   (384, 60)
+        Struct   (bot-left):    (96,  240)
+        React    (bot-right):   (384, 240)
+      Water center: (240, 150)
+    -->
+    <svg class="hub" viewBox="0 0 480 300" id="hub-svg"
+         role="img" aria-label="Hub diagram showing water at center with four spokes connecting to its roles as solvent, thermal buffer, structural medium, and chemical reactant">
+      <defs>
+        <!-- Water center gradient -->
+        <radialGradient id="hubOxy" cx="35%" cy="28%" r="72%">
+          <stop offset="0%"   stop-color="#F28B6E"/>
+          <stop offset="42%"  stop-color="#D85A30"/>
+          <stop offset="100%" stop-color="#8B2A10"/>
+        </radialGradient>
+        <!-- Hydrogen atoms -->
+        <radialGradient id="hubHyd" cx="38%" cy="30%" r="68%">
+          <stop offset="0%"   stop-color="#ffffff"/>
+          <stop offset="60%"  stop-color="#E8F4FF"/>
+          <stop offset="100%" stop-color="#A8C8E8"/>
+        </radialGradient>
+        <!-- Spoke gradients: fade from center outward -->
+        <linearGradient id="sg-solvent" x1="0" y1="0" x2="1" y2="0" gradientUnits="userSpaceOnUse"
+                        x1="240" y1="150" x2="96" y2="60">
+          <stop offset="0%"  stop-color="#2A9D8F" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#2A9D8F" stop-opacity="0.70"/>
+        </linearGradient>
+        <linearGradient id="sg-thermal" gradientUnits="userSpaceOnUse"
+                        x1="240" y1="150" x2="384" y2="60">
+          <stop offset="0%"  stop-color="#457B9D" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#457B9D" stop-opacity="0.70"/>
+        </linearGradient>
+        <linearGradient id="sg-struct" gradientUnits="userSpaceOnUse"
+                        x1="240" y1="150" x2="96" y2="240">
+          <stop offset="0%"  stop-color="#6A5ACD" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#6A5ACD" stop-opacity="0.70"/>
+        </linearGradient>
+        <linearGradient id="sg-react" gradientUnits="userSpaceOnUse"
+                        x1="240" y1="150" x2="384" y2="240">
+          <stop offset="0%"  stop-color="#C8914A" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#C8914A" stop-opacity="0.70"/>
+        </linearGradient>
+        <!-- Glow filter for active spokes -->
+        <filter id="spokeglow">
+          <feGaussianBlur stdDeviation="2.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Background field — soft radial suggesting water -->
+      <circle cx="240" cy="150" r="210" fill="rgba(36,128,200,0.04)"/>
+      <circle cx="240" cy="150" r="140" fill="rgba(36,128,200,0.05)"/>
+
+      <!-- ── Spokes — start from O sphere surface, not center ───
+           O center (240,158) r=36. Each spoke starts at the
+           surface point along the direction of its endpoint.    -->
+      <line id="spoke-solvent"
+            x1="210" y1="138" x2="115" y2="75"
+            stroke="url(#sg-solvent)" stroke-width="2.5"
+            stroke-linecap="round" opacity="0.55"/>
+      <line id="spoke-thermal"
+            x1="270" y1="138" x2="365" y2="75"
+            stroke="url(#sg-thermal)" stroke-width="2.5"
+            stroke-linecap="round" opacity="0.55"/>
+      <line id="spoke-struct"
+            x1="208" y1="175" x2="115" y2="225"
+            stroke="url(#sg-struct)" stroke-width="2.5"
+            stroke-linecap="round" opacity="0.55"/>
+      <line id="spoke-react"
+            x1="272" y1="175" x2="365" y2="225"
+            stroke="url(#sg-react)" stroke-width="2.5"
+            stroke-linecap="round" opacity="0.55"/>
+
+      <!-- Bond lines — drawn before atoms so O and H spheres sit on top -->
+      <line x1="240" y1="158" x2="191" y2="196"
+            stroke="#AEB8C1" stroke-width="6" stroke-linecap="round"/>
+      <line x1="240" y1="158" x2="289" y2="196"
+            stroke="#AEB8C1" stroke-width="6" stroke-linecap="round"/>
+
+      <!-- O atom (CPK red, matching all other diagrams) -->
+      <circle cx="240" cy="158" r="36" fill="url(#hubOxy)" stroke="#8B2A10" stroke-width="1.2"/>
+      <text x="240" y="158" text-anchor="middle" dominant-baseline="central"
+            style="font-size:20px;font-weight:600;fill:#fff;font-family:var(--font-sans)">O</text>
+
+      <!-- H atoms — positioned at ~62px from O center along 104.5° bond angle,
+           giving a clearly separate but bonded appearance -->
+      <circle cx="191" cy="196" r="19" fill="url(#hubHyd)" stroke="#2B91DD" stroke-width="0.8"/>
+      <text x="191" y="196" text-anchor="middle" dominant-baseline="central"
+            style="font-size:11px;font-weight:500;fill:#0C447C;font-family:var(--font-sans)">H</text>
+      <circle cx="289" cy="196" r="19" fill="url(#hubHyd)" stroke="#2B91DD" stroke-width="0.8"/>
+      <text x="289" y="196" text-anchor="middle" dominant-baseline="central"
+            style="font-size:11px;font-weight:500;fill:#0C447C;font-family:var(--font-sans)">H</text>
+      <!-- Center labels — above molecule, drawn last so they sit on top -->
+      <text x="240" y="88" text-anchor="middle"
+            style="font-size:11px;font-weight:600;fill:#8B2A10;font-family:var(--font-sans)">H₂O</text>
+      <text x="240" y="102" text-anchor="middle"
+            style="font-size:8.5px;fill:var(--color-text-tertiary);font-family:var(--font-sans)">one molecule</text>
+      <text x="240" y="114" text-anchor="middle"
+            style="font-size:8.5px;fill:var(--color-text-tertiary);font-family:var(--font-sans)">four roles</text>
+    </svg>
+
+    <!-- ── Role cards ─────────────────────────────────
+         Positioned by CSS over the four corners of the SVG.
+         Percentages relative to hub-wrap. -->
+    <div class="role-card" id="card-solvent"
+         style="top:6%;left:2%"
+         onclick="selectRole('solvent')">
+      <div class="role-icon">💧</div>
+      <p class="role-title">Solvent</p>
+      <p class="role-hook">dissolves and transports nutrients, signals, and wastes</p>
+    </div>
+
+    <div class="role-card" id="card-thermal"
+         style="top:6%;right:2%"
+         onclick="selectRole('thermal')">
+      <div class="role-icon">🌡️</div>
+      <p class="role-title">Thermal Buffer</p>
+      <p class="role-hook">absorbs and releases heat with minimal temperature change</p>
+    </div>
+
+    <div class="role-card" id="card-struct"
+         style="bottom:14%;left:2%"
+         onclick="selectRole('struct')">
+      <div class="role-icon">🌿</div>
+      <p class="role-title">Structural Medium</p>
+      <p class="role-hook">generates turgor pressure that keeps plant cells upright</p>
+    </div>
+
+    <div class="role-card" id="card-react"
+         style="bottom:14%;right:2%"
+         onclick="selectRole('react')">
+      <div class="role-icon">⚡</div>
+      <p class="role-title">Chemical Reactant</p>
+      <p class="role-hook">supplies hydrogen atoms that become biological energy</p>
+    </div>
+
+  </div><!-- /hub-wrap -->
+
+  <!-- ── Detail panel ─────────────────────────────── -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-bar" id="detail-bar"></div>
+    <div class="detail-body">
+      <p class="detail-title" id="detail-title"></p>
+      <p class="detail-subtitle" id="detail-subtitle"></p>
+      <p class="detail-desc" id="detail-desc"></p>
+      <p class="detail-example" id="detail-example"></p>
+    </div>
+  </div>
+
+  <p class="caption" style="margin-top:10px;">All four roles emerge from the same molecular structure. Water's polarity and hydrogen bonding allow one material to perform functions that, in human engineering, typically require separate specialized substances.</p>
+
+  <p class="tagline">Environmental Science through Nature's Genius</p>
+</div>
+
+<script>
+const ROLES = {
+  solvent: {
+    title: "Solvent",
+    subtitle: "water as the medium of biological transport",
+    color: "#2A9D8F",
+    spoke: "spoke-solvent",
+    card: "card-solvent",
+    desc: "Water's polarity makes it an exceptional solvent. The δ− oxygen end of each water molecule attracts positive ions and polar molecules, while the δ+ hydrogen ends attract negative ions. This allows water to surround, separate, and keep dissolved particles in motion. Since nutrients, hormones, and waste products must dissolve to move through living systems, water's solvent capacity is the foundation of biological transport.",
+    example: "In your blood right now, water is carrying glucose to cells, ferrying carbon dioxide away from them, and suspending the proteins that carry oxygen. None of this works without water's ability to keep all of these substances dissolved and in motion simultaneously."
+  },
+  thermal: {
+    title: "Thermal Buffer",
+    subtitle: "water as a stabilizer of temperature",
+    color: "#457B9D",
+    spoke: "spoke-thermal",
+    card: "card-thermal",
+    desc: "Water absorbs large amounts of heat before its temperature rises significantly, because incoming energy is partitioned between disrupting hydrogen bonds and increasing molecular motion. This gives water an unusually high specific heat capacity. The same property works in reverse: as water cools, it releases stored heat gradually rather than all at once.",
+    example: "Coastal cities experience milder temperature swings than inland cities at the same latitude because nearby ocean water absorbs summer heat and releases it slowly through winter. At the cellular scale, the water in your body performs the same function, buffering the heat generated by metabolism so that your internal temperature stays within the narrow range your enzymes require."
+  },
+  struct: {
+    title: "Structural Medium",
+    subtitle: "water as a source of mechanical support",
+    color: "#6A5ACD",
+    spoke: "spoke-struct",
+    card: "card-struct",
+    desc: "Water molecules inside plant cells push outward against the cell wall, creating turgor pressure. This hydraulic force keeps plant stems upright and leaves extended toward light. The structure is maintained entirely by water pressure rather than rigid materials. When water is lost, turgor falls and plants wilt. The structure collapses not because anything broke, but because the medium that was holding shape was removed.",
+    example: "A fresh celery stalk is crisp because its cells are fully pressurized with water. A wilted stalk has lost turgor. No new material needs to be added or removed. Simply restoring water restores the structure. This is hydraulic engineering at the cellular scale, and it happens in every leaf and stem that bends toward sunlight."
+  },
+  react: {
+    title: "Chemical Reactant",
+    subtitle: "water as a participant in biological reactions",
+    color: "#C8914A",
+    spoke: "spoke-react",
+    card: "card-react",
+    desc: "Water is not only a solvent and medium. It is a direct participant in chemical reactions. In photosynthesis, water molecules are split apart by light energy. The hydrogen atoms released from this splitting become the foundation of biological energy: they are used to build the sugar molecules that power nearly all life on Earth. Oxygen, released as a byproduct, enters the atmosphere. The air we breathe is a product of water being broken down.",
+    example: "Every oxygen molecule you are breathing right now was once part of a water molecule inside a plant cell or a cyanobacterium. Light split that water, the hydrogen was used to build sugar, and the oxygen was released. Water's role as a chemical reactant is what made an oxygen-rich atmosphere possible, and what makes the food that sustains your cells."
+  }
+};
+
+let activeRole = null;
+
+function selectRole(id) {
+  const role = ROLES[id];
+
+  // Toggle off if same role clicked again
+  if (activeRole === id) {
+    activeRole = null;
+    document.getElementById('detail-panel').classList.remove('visible');
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('active'));
+    // Reset all spokes
+    Object.keys(ROLES).forEach(k => {
+      const sp = document.getElementById(ROLES[k].spoke);
+      sp.style.strokeWidth = '2.5';
+      sp.style.opacity = '0.55';
+      sp.style.filter = '';
+    });
+    return;
+  }
+
+  activeRole = id;
+
+  // Update cards
+  document.querySelectorAll('.role-card').forEach(c => c.classList.remove('active'));
+  document.getElementById(role.card).classList.add('active');
+
+  // Update spokes — dim others, highlight active
+  Object.keys(ROLES).forEach(k => {
+    const sp = document.getElementById(ROLES[k].spoke);
+    if (k === id) {
+      sp.style.strokeWidth = '4';
+      sp.style.opacity = '1';
+      sp.style.filter = 'url(#spokeglow)';
+    } else {
+      sp.style.strokeWidth = '2.5';
+      sp.style.opacity = '0.20';
+      sp.style.filter = '';
+    }
+  });
+
+  // Populate and show detail panel
+  document.getElementById('detail-bar').style.background = role.color;
+  document.getElementById('detail-title').textContent = role.title;
+  document.getElementById('detail-title').style.color = role.color;
+  document.getElementById('detail-subtitle').textContent = role.subtitle;
+  document.getElementById('detail-desc').textContent = role.desc;
+  document.getElementById('detail-example').innerHTML =
+    '<strong>In living systems:</strong> ' + role.example;
+
+  document.getElementById('detail-panel').classList.add('visible');
+  // Smooth scroll to panel on mobile
+  document.getElementById('detail-panel').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+</script>
+
+</body>
+</html>
